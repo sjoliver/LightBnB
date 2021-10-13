@@ -8,34 +8,37 @@ DROP TABLE IF EXISTS property_reviews CASCADE;
 
 CREATE TABLE users (
   id serial PRIMARY KEY NOT NULL,
-  name varchar(255),
-  email varchar(255),
-  PASSWORD varchar(255)
+  name varchar(255) NOT NULL,
+  email varchar(255) NOT NULL,
+  password varchar(255) NOT NULL
 );
 
 CREATE TABLE properties (
   id serial PRIMARY KEY NOT NULL,
   owner_id integer REFERENCES users(id) ON DELETE CASCADE,
-  title varchar(255),
+
+  title varchar(255) NOT NULL,
   description text,
-  thumbnail_photo_url varchar(255),
-  cover_photo_url varchar(255),
-  cost_per_night integer,
-  parking_spaces integer,
-  number_of_bathrooms integer,
-  number_of_bedrooms integer,
-  country varchar(255),
-  street varchar(255),
-  city varchar(255),
-  province varchar(255),
-  post_code varchar(255),
-  active boolean
+  thumbnail_photo_url varchar(255) NOT NULL,
+  cover_photo_url varchar(255) NOT NULL,
+  cost_per_night integer NOT NULL DEFAULT 0,
+  parking_spaces integer NOT NULL DEFAULT 0,
+  number_of_bathrooms integer NOT NULL DEFAULT 0,
+  number_of_bedrooms integer NOT NULL DEFAULT 0,
+
+  country varchar(255) NOT NULL,
+  street varchar(255) NOT NULL,
+  city varchar(255) NOT NULL,
+  province varchar(255) NOT NULL,
+  post_code varchar(255) NOT NULL,
+
+  active boolean NOT NULL DEFAULT TRUE
 );
 
 CREATE TABLE reservations (
   id serial PRIMARY KEY NOT NULL,
-  start_date DATE,
-  end_date date,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
   property_id integer REFERENCES properties(id) ON DELETE CASCADE,
   guest_id integer REFERENCES users(id) ON DELETE CASCADE
 );
@@ -45,6 +48,6 @@ CREATE TABLE property_reviews (
   guest_id integer REFERENCES users(id) ON DELETE CASCADE,
   property_id integer REFERENCES properties(id) ON DELETE CASCADE,
   reservation_id integer REFERENCES reservations(id) ON DELETE CASCADE,
-  rating SMALLINT,
+  rating SMALLINT NOT NULL DEFAULT 0,
   message text
 );
