@@ -124,8 +124,70 @@ exports.getAllReservations = getAllReservations;
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function(options, limit = 10) {
+  // array to hold any parameters that may be available for the query
+  const queryParams = [];
+
+  // Start the query with all information that comes before the WHERE clause
+  let queryString = `
+  SELECT properties.*, avg(property_reviews.rating) as average_rating
+  FROM properties
+  JOIN property_reviews ON properties.id = property_id
+  `; 
+
+  if (options.owner_id) {
+    queryParams.push(options.owner_id); // The % syntax for the LIKE clause must be part of the parameter, not the query.
+    queryString += `WHERE owner_id = $${queryParams.length}` // use the length of the array to dynamically get the $n placeholder number
+  }
+  
+  // Check if a city has been passed in as an option. 
+  // Add the city to the params array and create a WHERE clause for the city.
+  if (options.city) {
+    queryParams.push(`%${options.city}%`); // The % syntax for the LIKE clause must be part of the parameter, not the query.
+    if (queryParams.length > 0) {
+      queryString += ` AND city LIKE $${queryParams.length}`
+    } else {
+      queryString += `WHERE city LIKE $${queryParams.length}` // use the length of the array to dynamically get the $n placeholder number
+    }
+  }
+
+  if (options.minimum_price_per_night) {
+    queryParams.push(options.minimum_price_per_night * 100); // The % syntax for the LIKE clause must be part of the parameter, not the query.
+    if (queryParams.length > 0) {
+      queryString += ` AND cost_per_night >= $${queryParams.length}`
+    } else {
+      queryString += `WHERE cost_per_night >= $${queryParams.length}`
+    }
+  }
+
+  if (options.maximum_price_per_night) {
+    queryParams.push(options.maximum_price_per_night * 100); // The % syntax for the LIKE clause must be part of the parameter, not the query.
+    if (queryParams.length > 0) {
+      queryString += ` AND cost_per_night <= $${queryParams.length}`
+    } else {
+      queryString += `WHERE cost_per_night <= $${queryParams.length}`
+    }
+  }
+
+  queryString += `
+  GROUP BY properties.id
+  `;
+
+  if (options.minimum_rating) {
+    queryParams.push(options.minimum_rating); // The % syntax for the LIKE clause must be part of the parameter, not the query.
+    queryString += `HAVING avg(property_reviews.rating) >= $${queryParams.length}`
+  }
+
+  // Add any query that comes after the WHERE clause
+  queryParams.push(limit);
+  queryString += `
+  ORDER BY cost_per_night
+  LIMIT $${queryParams.length};
+  `;
+
+  console.log(queryString, queryParams);
+
   return pool
-    .query(`SELECT * FROM properties LIMIT $1`, [limit])
+    .query(queryString, queryParams)
     .then((result) => result.rows)
     .catch((err) => console.log("ERROR:", err.message));
 }
